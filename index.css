@@ -5,6 +5,7 @@
 .leftContainer {
 	border-top-right-radius: 15px;
 	border-bottom-right-radius: 15px;
+	//background-color: #E4EDDE;
 }
 .rightContainer {
 	background-color: red;

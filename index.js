@@ -16,7 +16,7 @@ $(function () {
     var itemHeight = parseInt(rightFieldItem.css('height')) + 3;
     var a = 0;
     var cursor = {x : 0, y : 0};
-    
+
     $('.rightContainer').niceScroll({cursorwidth: '5px', autohidemode: false, zindex: 999});
 
     // *******************************************************************
