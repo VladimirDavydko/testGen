@@ -10,6 +10,7 @@ $(function () {
     model.forEach(function(item, i) {
         attachItemToRightContainer(item.Name);
     });
+    sortRightContainer();
 
     var rightFieldItem = $('.rightFieldItem').first();
     var itemHeight = parseInt(rightFieldItem.css('height')) + 3;
