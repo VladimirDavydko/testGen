@@ -16,6 +16,8 @@ $(function () {
     var itemHeight = parseInt(rightFieldItem.css('height')) + 3;
     var a = 0;
     var cursor = {x : 0, y : 0};
+    var canvas = document.getElementById("canvas");
+    var context = canvas.getContext("2d");
 
     $('.rightContainer').niceScroll({cursorwidth: '5px', autohidemode: false, zindex: 999});
 
@@ -32,6 +34,7 @@ $(function () {
     		batya.parent().remove();
     		sortRightContainer();
     	}
+        drawLines();
     });
 
     // need to fix
@@ -75,6 +78,7 @@ $(function () {
                 fieldsHolder.css('height', $(event.target).attr('height'));
                 fieldsContainer.css('border-top', $(event.target).attr('border-top'));
             }
+            drawLines();
         }
     });
 
@@ -83,41 +87,42 @@ $(function () {
 
         if(getLeftParent(event.target) == undefined) return;
 
-    	var elementToMove = getLeftParent(event.target).parentNode;
+        var elementToMove = getLeftParent(event.target).parentNode;
 
-    	elementToMove.style.zIndex = 1000;
-    	moveAt(event);
-    	var shiftX = event.pageX - $(elementToMove).offset().left;
-    	var shiftY = event.pageY - $(elementToMove).offset().top;
+        elementToMove.style.zIndex = 1000;
+        moveAt(event);
+        var shiftX = event.pageX - $(elementToMove).offset().left;
+        var shiftY = event.pageY - $(elementToMove).offset().top;
 
-    	function moveAt(event) {
-		    $(elementToMove).offset({
-		    	top: event.pageY - shiftY,
-		    	left: event.pageX - shiftX
-		    });
-	  	}
+        function moveAt(event) {
+            $(elementToMove).offset({
+                top: event.pageY - shiftY,
+                left: event.pageX - shiftX
+            });
+            drawLines();
+        }
 
-	  	document.onmousemove = function(event) {
-			moveAt(event);
-		}
+        document.onmousemove = function(event) {
+            moveAt(event);
+        }
 
-		elementToMove.onmouseup = function(event) {
-			document.onmousemove = null;
-			elementToMove.onmouseup = null;
+        elementToMove.onmouseup = function(event) {
+            document.onmousemove = null;
+            elementToMove.onmouseup = null;
 
-			var leftItem = getLeftParent(event.target);
-			var name = $(leftItem).children().first().html();
+            var leftItem = getLeftParent(event.target);
+            var name = $(leftItem).children().first().html();
 
-			if (isOverRight($(leftItem))) {
-				attachItemToRightContainer(name);
-	    		$(leftItem).parent().remove();
-	    		sortRightContainer();
-			}
-		}
+            if (isOverRight($(leftItem))) {
+                attachItemToRightContainer(name);
+                $(leftItem).parent().remove();
+                sortRightContainer();
+            }
+        }
 
-		elementToMove.ondragstart = function() {
-			return false;
-		};
+        elementToMove.ondragstart = function() {
+            return false;
+        };
     });
 
     // pulling item from right containet to left
@@ -128,6 +133,7 @@ $(function () {
             $(event.target).remove();
             resizeRightContainer(rightContainer.children().length, itemHeight);
         }
+        drawLines();
     });
 
     // *******************************************************************
@@ -143,6 +149,7 @@ $(function () {
         else {
             rightContainer.css("visibility", "");
         }
+        drawLines();
     }
     // cheking if left item is over right container
 	function isOverRight(leftItem) {
@@ -192,6 +199,7 @@ $(function () {
     	var contaner = createElement("objectItem noselect rightFieldItem", {name: "draggable", value: "true"});
     	$(contaner).html(text);
     	rightContainer.append(contaner);
+        drawLines();
     }
 
     // getting object from model
@@ -234,7 +242,7 @@ $(function () {
     function attachItemToLeftContainer(text) {
 
         var dataObject = getObjectByName(text).object;
-        var contaner            = createElement("objectItem leftItem noselect");
+        var contaner            = createElement("objectItem leftItem noselect", {name: "name", value: text});
         var mainContaner        = createElement("mainContaner", {name: "draggable", value: "true"});
         var nameHolder          = createElement("nameHolder", undefined);
         var fieldHolder         = createElement("field");
@@ -252,7 +260,7 @@ $(function () {
 
         // creating "field-type" section
         for (var i = 0; i < dataObject.Fields.length; i++) {
-            var fieldName = createElement("fieldItem leftFieldItem");
+            var fieldName = createElement("fieldItem leftFieldItem", {name: "name", value: dataObject.Fields[i].Name});
             if (dataObject.Fields[i].Name.length < 13) {
                 $(fieldName).html(dataObject.Fields[i].Name);
             }
@@ -296,6 +304,91 @@ $(function () {
         }
 
         return contaner;
+    }
+
+    function drawLines() {
+
+        if (context == undefined) return;
+
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
+        for(var i = 0; i < linesList.length; i++) {
+
+            var container1 = $("[name='" + linesList[i].name1 + "']");
+            var container2 = $("[name='" + linesList[i].name2 + "']");
+
+            var field1 = container1.find("[name='" + linesList[i].field1 + "']");
+            var field2 = container2.find("[name='" + linesList[i].field2 + "']");
+
+            if (field1.length == 0 || field2.length == 0) continue;
+
+            var width1 = parseInt(field1.parent().css('width')) - 10;
+            var width2 = parseInt(field2.parent().css('width'));
+
+            if ($("[name='" + linesList[i].name1 + "']").find(".leftFieldItemHolder").css('height') != '0px') {
+                var x1 = field1.parent().offset().left + width1;
+                var y1 = field1.offset().top - 20;
+            }
+            else {
+                var x1 = container1.offset().left + width1;
+                var y1 = container1.offset().top - 14;
+            }
+
+            if ($("[name='" + linesList[i].name2 + "']").find(".leftFieldItemHolder").css('height') != '0px') {
+                var x2 = field2.parent().offset().left - 14;
+                var y2 = field2.offset().top - 20;
+            }
+            else {
+                var x2 = container2.offset().left - 14;
+                var y2 = container2.offset().top - 14;
+            }
+
+            width1 += 12;
+
+            drowLine(x1, y1, x2, y2, width1, width2);
+        }
+
+        function drowLine(x1, y1, x2, y2, width1, width2) {
+            context.lineWidth = 3;
+            context.strokeStyle = "#333";
+            context.beginPath();
+            context.moveTo(x1, y1);
+            if (x1 <= x2) {
+                context.bezierCurveTo((x1 - x2)/2 + x2, y1, (x1 - x2)/2 + x2, y2, x2, y2);
+            }
+            else {
+                x2 += width2;
+                if (x1 < x2) {
+                    context.bezierCurveTo(-(x1 - x2)/2 + x2, y1, -(x1 - x2)/2 + x2, y2, x2, y2);
+                }
+                else {
+                    x1 -= width1;
+                    x2 -= width2;
+                    context.moveTo(x1, y1);
+                    if (x2 + width2 > x1){
+                        context.bezierCurveTo(-(x1 - x2)/2 + x2, y1, -(x1 - x2)/2 + x2, y2, x2, y2);
+                    }
+                    else {
+                        x2 += width2;
+                        context.bezierCurveTo((x1 - x2)/2 + x2, y1, (x1 - x2)/2 + x2, y2, x2, y2);
+                    }
+                }
+            }
+            context.stroke();
+
+            drawCircle(context, x1, y1);
+            drawCircle(context, x2, y2);
+        }
+
+        function drawCircle(context, x, y) {
+            context.beginPath();
+            context.arc(x, y, 3, 0, 2 * Math.PI, false);
+            context.fillStyle = 'green';
+            context.fill();
+            context.lineWidth = 1;
+            context.strokeStyle = '#003300';
+            context.stroke();
+        }
     }
 
 });

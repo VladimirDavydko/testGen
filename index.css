@@ -5,7 +5,7 @@
 .leftContainer {
 	border-top-right-radius: 15px;
 	border-bottom-right-radius: 15px;
-	//background-color: #E4EDDE;
+	background-color: #E4EDDE;
 }
 .rightContainer {
 	background-color: red;
@@ -104,4 +104,11 @@
 .nameHolder {
 	font-size: 20px;
 	line-height: 30px;
+}
+#canvas {
+	display: inline;
+	float: left;
+	margin: 0 10px 10px 0;
+	height: 100%;
+	width: 100%;
 }
