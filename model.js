@@ -1,3 +1,64 @@
+    function q() {    
+        var left = [];
+        var right = [];
+        var linesListClone = [];
+        var queue = [];
+
+        for (var i = 0; i < linesList.length; i++) {
+            linesListClone.push(linesList[i]);
+            left.push(linesList[i].name1);
+            right.push(linesList[i].name2);
+        }
+
+        while (linesListClone.length != 0) {
+
+            var startLength = linesListClone.length;
+
+            for (var i = 0; i < linesListClone.length; i++) {
+
+                var name1 = linesListClone[i].name1;
+                var name2 = linesListClone[i].name2;
+
+                if (left.indexOf(name2) == -1) {
+
+                    if (queue.indexOf(name2) == -1) {
+                        queue.push(name2);
+                    }
+                    
+                    linesListClone.splice(i, 1);
+                    left.splice(i, 1);
+                    right.splice(i, 1);
+
+                    if (left.indexOf(name1) == -1) {
+                        queue.push(name1);
+                    }
+
+                    i--;
+                }
+            }
+
+            if (linesListClone.length == startLength) {
+                if (linesListClone.length > 0) {
+                    var strInfo = "Can't insert: ";
+                    for (var i = 0; i < linesListClone.length; i++) {
+                        strInfo += linesListClone[i].name1;
+                        if (i < linesListClone.length - 1) {
+                            strInfo += ", ";
+                        }
+                        else {
+                            strInfo += ";";
+                        }
+                    }
+                    console.log(strInfo);
+                }
+                break;
+            }
+        }
+
+        for (var i = 0; i < queue.length; i++) {
+            console.log(i + 1 + ") " + queue[i]);
+        }
+    }
 
 
     var linesList = [
@@ -5,7 +66,7 @@
         {name1: 'Account', field1: 'website', name2: 'Contact', field2: 'accountid'},
         {name1: 'Account', field1: 'ownerid', name2: 'Opportunity', field2: 'name'},
         {name1: 'Opportunity', field1: 'type', name2: 'Order', field2: 'name'},
-        {name1: 'Order', field1: 'Contact__c', name2: 'Contact', field2: 'lastname4'},
+        {name1: 'Order', field1: 'Contact__c', name2: 'Contact', field2: 'lastname3'},
         {name1: 'Case', field1: 'type', name2: 'Order', field2: 'type'}
     ];
 

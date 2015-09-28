@@ -353,6 +353,7 @@ $(function () {
             context.strokeStyle = "#333";
             context.beginPath();
             context.moveTo(x1, y1);
+            var isLeftArrow = false;
             if (x1 <= x2) {
                 context.bezierCurveTo((x1 - x2)/2 + x2, y1, (x1 - x2)/2 + x2, y2, x2, y2);
             }
@@ -360,6 +361,7 @@ $(function () {
                 x2 += width2;
                 if (x1 < x2) {
                     context.bezierCurveTo(-(x1 - x2)/2 + x2, y1, -(x1 - x2)/2 + x2, y2, x2, y2);
+                    isLeftArrow = true;
                 }
                 else {
                     x1 -= width1;
@@ -371,13 +373,20 @@ $(function () {
                     else {
                         x2 += width2;
                         context.bezierCurveTo((x1 - x2)/2 + x2, y1, (x1 - x2)/2 + x2, y2, x2, y2);
+                        isLeftArrow = true;
                     }
                 }
             }
             context.stroke();
 
+            if (isLeftArrow) {
+                drawLeftArrow(context, x2, y2);
+            }
+            else {
+                drawRightArrow(context, x2, y2);
+            }
+
             drawCircle(context, x1, y1);
-            drawCircle(context, x2, y2);
         }
 
         function drawCircle(context, x, y) {
@@ -387,6 +396,54 @@ $(function () {
             context.fill();
             context.lineWidth = 1;
             context.strokeStyle = '#003300';
+            context.stroke();
+        }
+
+        function drawRightArrow(context, x, y) {
+            context.beginPath();
+            
+            x += 5;
+            var a = 10;
+            var b = 6;
+
+            context.moveTo(x, y);
+
+            context.lineTo(x - a, y - a);
+            context.lineTo(x - a, y - a + b);
+            context.lineTo(x - b, y);
+
+            context.lineTo(x - a, y + a - b);
+            context.lineTo(x - a, y + a);
+            context.lineTo(x, y);
+
+            context.lineWidth = 1;
+            context.strokeStyle = '#003300';
+            context.fillStyle = 'green';
+            context.fill();
+            context.stroke();
+        }
+
+        function drawLeftArrow(context, x, y) {
+            context.beginPath();
+            
+            x -= 5;
+            var a = 10;
+            var b = 6;
+
+            context.moveTo(x, y);
+
+            context.lineTo(x + a, y - a);
+            context.lineTo(x + a, y - a + b);
+            context.lineTo(x + b, y);
+
+            context.lineTo(x + a, y + a - b);
+            context.lineTo(x + a, y + a);
+            context.lineTo(x, y);
+
+            context.lineWidth = 1;
+            context.strokeStyle = '#003300';
+            context.fillStyle = 'green';
+            context.fill();
             context.stroke();
         }
     }
