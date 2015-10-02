@@ -1,0 +1,156 @@
+<apex:page controller="TestGenController" action="{!check}">
+	<style>
+		.center {text-align : center; background-color: #CEE0ED;}
+		.current {color : #002E00; background-color: #CEE0ED;}
+	</style>
+	<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+	<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+	<script>
+		window.onload = function(){
+		    document.getElementById('j_id0:form:j_id4').focus();
+		}
+		function openPopup(page){
+		    window.open(page,'_blank', 'toolbar=yes, scrollbars=yes, resizable=yes, top=350, left=350, width=380, height=450')
+		}
+
+		function openPicklist(page, setupParam, setupPicklistParam){
+		    window.open(page + '?setupParam=' + setupParam + '&setupPicklistParam=' + setupPicklistParam,'_blank', 'toolbar=yes, scrollbars=yes, resizable=yes, top=350, left=350, width=390, height=450')
+		}
+		
+		function loading(val) {
+		  	if (val) {
+			    document.getElementById('contentLoading').style.display = 'block';
+		  	}
+	  		else {
+			    document.getElementById('contentLoading').style.display = 'none';
+	  		}
+		}
+	</script>
+	<apex:actionStatus id="loading" onstart="loading(true)" onstop="loading(false)" />
+	<apex:variable var="index" value="{!1}" />
+	<apex:form id="form">
+		<!-- <div>{!console}</div> -->
+		<apex:outputPanel id="block">
+			 <apex:pageBlock >
+				<div style="display: table; text-align: left;" >
+					<div style="display: table-cell; vertical-align: top; margin-right: 30px; width : 380px; font-size: 150%;">Test Data Generator</div>
+					
+					<div style="display: table-cell; vertical-align: top; margin-right: 10px;">
+						<div id="contentLoading" style="display:none;">
+					  		<div style="text-align: center;">
+						    	<img src="/img/loading.gif" alt="Loading graphic" />
+					  		</div>
+						</div>
+					</div>
+				</div>
+				
+				<apex:messages style="border: 4px double black; display: table; width : 352px;"/>
+				<apex:outputText escape="false" rendered="{!console != ''}" style="border: 4px double black; display: table; width : 352px;" value="{!console}"/>
+
+			 	<div style="display: table; text-align: center; margin-top: 10px;" id="contentLoaded">
+			 		<div style="display: table-cell; vertical-align: top; margin-right: 10px;">
+			 			<apex:pageBlockTable value="{!wraperList}" var="component" style="width : 400px;" rendered="{!renderMainObjects}" id="sObjectForm" styleClass="table table-striped table-bordered table-condensed">
+				            <apex:column headerValue="sObject" headerClass="center" styleClass="{!IF(component.name == setupParam, 'current', '')}"> 
+				            	<span>{!component.name}</span> 
+			             	</apex:column>
+			             	<apex:column headerValue="Count" headerClass="center" styleClass="{!IF(component.name == setupParam, 'current', '')}"> 
+				            	<apex:inputText value="{!component.objectCount}" style="width : 50px; text-align: center;"/>
+			             	</apex:column>
+				            <apex:column headerValue="Active" headerClass="center" styleClass="{!IF(component.name == setupParam, 'current', '')}">
+				            	<apex:inputCheckbox value="{!component.isCheked}"/>
+				            </apex:column> 
+				            <apex:column headerClass="center" styleClass="{!IF(component.name == setupParam, 'current', '')}">
+								<apex:facet name="header">
+									<apex:outputpanel >                   
+										<apex:outputLink onclick="selectAll();return false;">Delete</apex:outputLink>
+			    					</apex:outputpanel>   
+			  					</apex:facet>
+				            	<apex:inputCheckbox value="{!component.isNeedToDelete}"/>
+							</apex:column>
+				            <apex:column headerValue="Setup" headerClass="center" styleClass="{!IF(component.name == setupParam, 'current', '')}">
+				            	<apex:commandLink onclick="setupAction('{!component.name}'); return false;"><span>setup</span></apex:commandLink>
+			            	</apex:column> 
+				        </apex:pageBlockTable> 
+				        <div>
+			            	<apex:commandButton action="{!save}" status="loading" value="Save" id="theButton" style="background:#C6F7C8; margin-top : 5px; display: table-cell; margin-right: 5px; margin-top: 5px;" rerender="form" rendered="{!renderMainObjects}"/>
+			            	<apex:commandButton action="{!run}" status="loading" value="Kill'em all" style="background:#F7C6D1; margin-top : 5px; display: table-cell; margin-right: 5px; margin-top: 5px;" rerender="form" rendered="{!renderMainObjects}"/>
+			            	<apex:commandButton action="{!deleteObjectFromMainList}" status="loading" value="Delete cheked"  style="margin-top : 5px; display: table-cell; margin-right: 5px; margin-top: 5px;" rerender="form" rendered="{!renderMainObjects}"/>
+			            	<apex:commandButton action="{!AddObjectToData}" onclick="openPopup('{!$Page.sObjectListPage}','somevalue');" value="Add Objects" style="display: table-cell; margin-top : 10px; margin-right: 5px;" rerender="form"/>
+				        	<!-- <apex:commandButton action="{!refresh}" status="loading" value="Refresh" style="margin-top : 5px; display: table-cell; margin-right: 5px; margin-top: 5px;" rerender="form"/> -->
+				        	<!--  -->
+				        		<apex:commandButton action="{!testRun}" status="loading" value="Test Run" rerender="form" rendered="{!renderMainObjects}"/>
+				        	<!--  -->
+				        </div>
+				        <apex:outputpanel rendered="{!needToShowObjectsPaging}">
+							<apex:commandButton action="{!first}" status="loading" title="Beginning" value="<<" reRender="form" style="margin-right: 3px; margin-top: 5px;"/>
+							<apex:commandButton action="{!previous}" status="loading" title="Previous" value="<" reRender="form" style="margin-right: 3px; margin-top: 5px;"/>   
+							{!pager} 
+							<apex:commandButton action="{!next}" status="loading" title="Next" value=">" reRender="form" style="margin-right: 3px; margin-left: 5px; margin-top: 5px;"/>
+							<apex:commandButton action="{!last}" status="loading" title="End" value=">>" reRender="form" style="margin-right: 3px; margin-top: 5px;"/>  
+						</apex:outputpanel>
+			        </div>
+			        <div style="display: table-cell;">
+			        	<apex:pageBlockTable value="{!fieldsWraperListMain}" var="component" style="width : 500px; text-align : center" rendered="{!renderFields}" id="fieldsForm">
+				            <apex:column value="{!component.name}" headerValue="Field" headerClass="center" styleClass="current"/>
+				            <apex:column headerValue="Type" headerClass="center" styleClass="current">
+				            	<apex:outputText value="{!component.fieldType}"/>
+				            </apex:column>
+				            <apex:column headerValue="Active" headerClass="center" styleClass="current">
+				            	<apex:inputCheckbox value="{!component.isCheked}">
+				            		<apex:actionSupport event="onchange" rerender="fieldsForm">
+					                </apex:actionSupport>
+				            	</apex:inputCheckbox>
+				            </apex:column> 
+			            	<apex:column headerValue="Required" headerClass="center" styleClass="current">
+				            	<apex:inputCheckbox value="{!component.isRequired}" disabled="true">
+				            		<apex:actionSupport event="onchange" rerender="fieldsForm">
+					                </apex:actionSupport>
+				            	</apex:inputCheckbox>
+				            </apex:column> 
+				            <apex:column headerValue="Value" headerClass="center" styleClass="current">
+				            	<apex:inputText value="{!component.value}" disabled="{!!component.isCheked}" 
+				            		rendered="{!component.fieldType != 'PICKLIST' && component.fieldType != 'MULTIPICKLIST' && component.fieldType != 'REFERENCE' && component.fieldType != 'BOOLEAN' && component.fieldType != 'DATE'}" style="width : 200px"/>
+			            		<apex:inputText value="{!component.value}" disabled="true" html-placeholder="{!IF(component.isCheked, 'Random sObject', '')}" 
+			            		rendered="{!component.fieldType == 'REFERENCE'}" style="width : 200px"/>
+				            	<apex:inputText rendered="{!component.fieldType = 'DATE'}" value="{!component.value}" disabled="{!!component.isCheked}" style="width : 200px" html-placeholder="Date format: 22-01-2015"/>
+				            	<apex:selectList value="{!component.value}" rendered="{!component.fieldType = 'BOOLEAN'}" disabled="{!!component.isCheked}" size="1" style="width : 204px">
+						            <apex:selectOption itemValue="Random" itemLabel="Random"/>
+						            <apex:selectOption itemValue="True" itemLabel="True"/>
+						            <apex:selectOption itemValue="False" itemLabel="False"/>
+						        </apex:selectList>
+						        <apex:selectList onclick="openPicklist('{!$Page.Picklist}', '{!setupParam}', '{!component.name}');" id="countries" value="{!component.value}" size="1" rendered="{!component.fieldType = 'PICKLIST' || component.fieldType = 'MULTIPICKLIST'}" style="width : 204px" disabled="{!!component.isCheked}">
+							  		<apex:selectOptions value="{!component.options}"/>
+								</apex:selectList>
+				            </apex:column> 
+					    </apex:pageBlockTable>
+					    <apex:outputpanel rendered="{!renderFields && needToShowFieldsPaging}">
+							<apex:commandButton action="{!firstField}" status="loading" title="Beginning" value="<<" reRender="form" style="margin-right: 3px; margin-top: 5px;"/>
+							<apex:commandButton action="{!previousField}" status="loading" title="Previous" value="<" reRender="form" style="margin-right: 3px; margin-top: 5px;"/>   
+							{!fieldsPager} 
+							<apex:commandButton action="{!nextField}" status="loading" title="Next" value=">" reRender="form" style="margin-right: 3px; margin-left: 5px; margin-top: 5px;"/>
+							<apex:commandButton action="{!lastField}" status="loading" title="End" value=">>" reRender="form" style="margin-right: 3px; margin-top: 5px;"/>  
+						</apex:outputpanel>
+					    <apex:outputpanel >
+					        <apex:actionstatus id="status">
+					            <apex:facet name="start">
+					                <div class="waitingSearchDiv" id="el_loading" style="background-color: #fbfbfb;
+					                       height: 100%;opacity:0.65;width:100%;"> 
+					                    <div class="waitingHolder" style="top: 74.2px; width: 91px;">
+					                        <img class="waitingImage" src="/img/loading.gif" title="Please Wait..." />
+					                        <span class="waitingDescription">Loading...</span>
+					                    </div>
+					                </div>
+					            </apex:facet>
+					        </apex:actionstatus>
+					    </apex:outputpanel> 
+			        </div>
+		        </div>
+            </apex:pageBlock>
+    	</apex:outputPanel>     
+    	<apex:actionFunction action="{!setup}" name="setupAction" rerender="form" status="loading">
+			<apex:param name="param" assignTo="{!setupParam}" value="" />
+		</apex:actionFunction>     
+		<apex:actionFunction action="{!selectAll}" name="selectAll" rerender="form"></apex:actionFunction>  
+		<apex:actionFunction action="{!refresh}" name="refresh" rerender="form" status="loading"></apex:actionFunction>  
+		</apex:form>
+</apex:page>

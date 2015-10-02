@@ -1,0 +1,21 @@
+<apex:page controller="PicklistController" docType="html-5.0" sidebar="false" showHeader="false" standardStylesheets="false">	
+	<link rel="stylesheet" href="{!URLFOR($Resource.SiteSamples, 'bootstrap-3.3.4-dist/css/bootstrap.css')}"/>
+	<apex:form id="form">
+		<apex:outputPanel id="block">
+			 <apex:pageBlock >
+		        <apex:pageBlockTable value="{!optionList}" var="option" styleClass="table table-striped table-bordered table-condensed" style="width : 300px; margin-left: 40px; margin-top: 5px;" >
+		            <apex:column headerValue="Label" headerClass="center">
+		            	<apex:outputText value="{!option.label}"/>
+		            </apex:column>
+		            <apex:column headerValue="Active" headerClass="center">
+		            	<apex:inputCheckbox value="{!option.isActive}"/>
+		            </apex:column>
+		            <apex:column headerValue="Probability" headerClass="center">
+						<apex:input value="{!option.probability}" type="number" html-min="0" html-max="50000" />
+		            </apex:column>
+		        </apex:pageBlockTable> 
+		        <apex:commandButton action="{!save}" value="Save" />
+            </apex:pageBlock>  
+    	</apex:outputPanel>
+	</apex:form>
+</apex:page>

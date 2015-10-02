@@ -1,0 +1,127 @@
+.container {
+	height: 700px;
+	margin-top: 30px;
+}
+.leftContainer {
+	border-top-right-radius: 15px;
+	border-bottom-right-radius: 15px;
+	//background-color: #E4EDDE;
+}
+.rightContainer {
+	background-color: red;
+	border-top-left-radius: 15px;
+	border-bottom-left-radius: 15px;
+	height: 315px;
+	overflow: auto;
+	padding-top: 10px;
+	padding-bottom: 10px;
+}
+.objectTable {
+	margin-top: 10px;	
+}
+.objectItem {
+	margin-top: 5px;
+	border: solid;
+	border-color: black;
+	border-width: 2px;
+	border-radius: 10px;
+	background-color: white;
+	line-height: 50px;
+	text-align: center;
+	font-size: 20px;
+	cursor: pointer;
+}
+.leftItem {
+	width: 200px;
+	background-color: rgba(101, 174, 102, 0.9);
+	font-size: 13px;
+}
+.field {
+	border-top: 3px solid;
+}
+.fieldItem {
+	display:inline-block; width: 48%;
+}
+.leftFieldItem {
+	border-right: 1px solid;
+}
+.rightFieldItem {
+	
+}
+.leftFieldItemHolder {
+	line-height: 20px;
+	overflow: hidden;
+}
+.noselect {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+.alert {
+	padding: 15px;
+	border-radius: 7px;
+	color: white;
+	background-color: rgba(47, 162, 47, 1);
+	display: block;
+	line-height: 7px;
+	width: 160px;
+	text-align: center;
+	font-size: 15px;
+}
+.triangle {
+	width: 0;
+	height: 0;
+	border-style: solid;
+	border-width: 0 10px 10px 10px;
+	border-color: transparent transparent rgba(47, 162, 47, 1) transparent;
+	margin-left: 20px;
+}
+.alert-contaner {
+	margin-top: 0px;
+	margin-left: 0px;
+	position: absolute;
+	z-index: 999;
+}
+.bottomArrow {
+	width: 100px;
+	height: 10px;
+	margin-left: 50px;
+	background-color: rgba(47, 162, 47, 0.5);
+	cursor: pointer;
+	background-image: url(images/arrow-top.png);
+    background-position: center;
+    background-repeat: no-repeat;
+	border: solid;
+	border-color: black;
+	border-width: 1px;
+	border-bottom-left-radius: 5px;
+	border-bottom-right-radius: 5px;
+	visibility: hidden;
+}
+.nameHolder {
+	font-size: 20px;
+	line-height: 30px;
+	margin-bottom: -5px;
+}
+#canvas {
+	display: inline;
+	float: left;
+	margin: 0 10px 10px 0;
+	cursor: default;
+	position: absolute;
+}
+.count {
+	line-height: 30px;
+}
+.countHolder {
+	line-height: 10px;
+	width: 40px;
+	text-align: center;
+	background: inherit;
+	border: solid 1px black;
+  	box-shadow: inset 1px 1px 2px 0 #707070;
+  	border-radius: 5px;
+}

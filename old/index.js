@@ -41,7 +41,6 @@ $(function () {
     // need to fix
     rightContainer.bind('dragend', function(event){
 		$(event.target).css('opacity', '1');
-		console.log('screenX ' + event.screenX);
 		var name = $(event.target).html();
 		var leftItem = $(attachItemToLeftContainer(name)).parent();
 		$(event.target).remove();
@@ -250,7 +249,6 @@ $(function () {
         var fieldHolder         = createElement("field");
         var leftFieldItemHolder = createElement("leftFieldItemHolder");
         var bottomArrow         = createElement("bottomArrow");
-        var bottomPlus          = createElement("bottomArrow plus");
         var count               = createElement("count");
 
         var countHolder = document.createElement("input");
@@ -258,11 +256,9 @@ $(function () {
 
         mainContaner.onmouseover = function(event) {
             bottomArrow.style.visibility = "visible";
-            bottomPlus.style.visibility = "visible";
         }
         mainContaner.onmouseleave = function(event) {
             bottomArrow.style.visibility = "hidden";
-            bottomPlus.style.visibility = "hidden";
         }
 
         $(nameHolder).html(text);
@@ -296,7 +292,6 @@ $(function () {
         contaner    .appendChild(fieldHolder);
         mainContaner.appendChild(contaner);
         mainContaner.appendChild(bottomArrow);
-        mainContaner.appendChild(bottomPlus);
         leftContainer.append(mainContaner);
 
         var leftItems = $(".leftItem");

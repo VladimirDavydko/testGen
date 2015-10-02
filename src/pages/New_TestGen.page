@@ -1,0 +1,892 @@
+<apex:page sidebar="false" showHeader="false" standardStylesheets="false" controller="NewTestGenController">
+    <title>New TestGen JQuery</title>
+    <apex:stylesheet value="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" />
+    <apex:stylesheet value="{!URLFOR($Resource.newTestGenRes, 'index.css')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.newTestGenRes, 'jquery-1.11.3.min.js')}"/>
+    <script type="https://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <apex:includeScript value="{!URLFOR($Resource.newTestGenRes, 'nicescroll.js')}"/>
+
+    <body>
+        <div class="container leftContainer col-lg-10 col-md-10 col-sm-10 col-xs-10 noselect">
+            <canvas id="canvas" height="1000" width="1900" class="bezier"></canvas>
+        </div>
+        <div class="container rightContainer col-lg-2 col-md-2 col-sm-2 col-xs-2 noselect"></div>
+        
+        <div id="popup" class="modal-box">
+	        <header>
+	            <a href="#" class="js-modal-close close">×</a>
+	            <h3></h3>
+	        </header>
+	        <div class="modal-body">
+	        	<table class="table table-hover">
+				    <thead>
+				      <tr>
+				        <th>Name</th>
+				        <th>Type</th>
+				        <th>Active</th>
+				      </tr>
+				    </thead>
+				    <tbody></tbody>
+				  </table>
+	        </div>
+	        <footer>
+	            <a href="#" id="closeBtn" class="btn btn-small js-modal-close">OK</a>
+	        </footer>
+	    </div>
+	    <div class="mainCircularG">
+			<div id="circularG_1" class="circularG"></div>
+			<div id="circularG_2" class="circularG"></div>
+			<div id="circularG_3" class="circularG"></div>
+			<div id="circularG_4" class="circularG"></div>
+			<div id="circularG_5" class="circularG"></div>
+			<div id="circularG_6" class="circularG"></div>
+			<div id="circularG_7" class="circularG"></div>
+			<div id="circularG_8" class="circularG"></div>
+		</div>
+    </body>
+    <script>
+    	
+    // *******************************************************************
+    // **      global variables and onload functionality                **
+    // *******************************************************************
+    
+    var cursorX;
+    var cursorY;
+    
+    document.onmousemove = function(e){
+        cursorX = e.pageX;
+        cursorY = e.pageY;
+    }
+    
+    var appendthis =  ("<div class='modal-overlay js-modal-close'></div>");
+    var isActivePopup = false;   
+	var popup = $('#popup');  
+    var rightContainer = $('.rightContainer');
+    var leftContainer = $('.leftContainer');
+    var model = [];
+    var linesList = [];
+    var itemHeight;
+    // filling right container
+    Visualforce.remoting.Manager.invokeAction(
+        '{!$RemoteAction.NewTestGenController.getObjectNames}',
+        function(result, event){
+            if (event.status) {
+                result.forEach(function(item, i) {
+                    attachItemToRightContainer(item);
+                    model.push({Name: item});
+                });
+                
+                var rightFieldItem = $('.rightFieldItem').first();
+                itemHeight = parseInt(rightFieldItem.css('height')) + 3;
+                sortRightContainer();
+            }
+        }, 
+        {escape: true}
+    );
+
+    var cursor = {x : 0, y : 0};
+    var canvas = document.getElementById("canvas");
+    $(canvas).attr('width', parseInt(leftContainer.css('width')) + parseInt(rightContainer.css('width')));
+    $(canvas).attr('height', leftContainer.css('height'));
+    var context = canvas.getContext("2d");
+    var sircleRadius = 3;
+
+    $('.rightContainer').niceScroll({cursorwidth: '5px', autohidemode: false, zindex: 999});
+    $(window).resize();
+
+    // *******************************************************************
+    // **                        events                                 **
+    // *******************************************************************
+
+    // move item from left container to right
+    leftContainer.dblclick(function(event){
+        var batya = $(getLeftParent(event.target));
+        if(batya.hasClass('leftItem')) {
+            var name = batya.children().first().html();
+            attachItemToRightContainer(name);
+            batya.parent().remove();
+            sortRightContainer();
+        }
+        drawLines();
+    });
+    
+    document.addEventListener('dragover',dragover,false);
+    
+    function dragover(e){
+        cursorX = e.clientX;
+        cursorY = e.clientY;
+    }
+    
+    $('.modal-body').bind('click', function(event){
+    	if ($(event.target).attr('type') == 'checkbox') return;
+    	var checkbox = $(event.target).closest('tr').find('input');
+    	if (checkbox) {
+    		if ($(checkbox).prop('disabled')) return;
+    		var value = checkbox.prop('checked');
+    		checkbox.prop('checked', !value);
+   		}
+    });
+    
+    rightContainer.bind('dragend', function(event){
+        $(event.target).css('opacity', '1');
+        var name = $(event.target).html();
+        attachItemToLeftContainer(name, event);
+        $(event.target).remove();
+        resizeRightContainer(rightContainer.children().length, itemHeight);
+    });
+
+    rightContainer.bind('dragstart', function(event){
+        $(event.target).css('opacity', '0.5');
+    });
+
+    // bottom arrow functionality
+    leftContainer.bind('click', function(event){
+        if ($(event.target).hasClass('arrow')) {
+            var fieldsContainer = $(event.target).prev().children().last();
+            var fieldsHolder = fieldsContainer.children().first();
+            if (fieldsHolder.css('height') != '0px') {                
+                $(event.target).attr('height', fieldsHolder.css('height'));
+                $(event.target).attr('border-top', fieldsContainer.css('border-top'));
+                fieldsContainer.css({'border-top': 'none'});
+                fieldsHolder.css({'height': 0});
+                $(event.target).removeClass('up');
+                $(event.target).addClass('down');
+            }
+            else {
+                fieldsHolder.css('height', $(event.target).attr('height'));
+                fieldsContainer.css('border-top', $(event.target).attr('border-top'));
+                $(event.target).removeClass('down');
+                $(event.target).addClass('up');
+            }
+            drawLines();
+        }
+        if ($(event.target).hasClass('plus') && !isActivePopup) {
+        	event.preventDefault();
+            $("body").append(appendthis);
+            $(".modal-overlay").fadeTo(500, 0.7);
+            $(".modal-overlay").css({
+            	'height' : $( document ).height(),
+            	'width' : $( document ).width()
+           	});
+            popup.fadeIn($(this).data());
+            isActivePopup = true;
+            var name = $(event.target).parent().find('.leftItem').attr('name');
+            $('#popup > header > h3').html(name);
+            $('.mainContaner').css('z-index', 100);
+            var fields = getFieldsFromModel(name);
+            if (fields[0].Name == 'id') fields.shift();
+            setFields(fields, name);
+        }
+    });
+
+    // dragging left container's item
+    leftContainer.bind('mousedown', function(event){
+
+        if(getLeftParent(event.target) == undefined || $(event.target).hasClass("countHolder")) return;
+
+        var elementToMove = getLeftParent(event.target).parentNode;
+
+        elementToMove.style.zIndex = 1000;
+        moveAt(event);
+        var shiftX = event.pageX - $(elementToMove).offset().left;
+        var shiftY = event.pageY - $(elementToMove).offset().top;
+
+        function moveAt(event) {
+            $(elementToMove).offset({
+                top: event.pageY - shiftY,
+                left: event.pageX - shiftX
+            });
+            drawLines();
+        }
+
+        document.onmousemove = function(event) {
+            moveAt(event);
+            cursorX = event.pageX;
+            cursorY = event.pageY;
+        }
+
+        elementToMove.onmouseup = function(event) {
+            document.onmousemove = function(e){
+                cursorX = e.pageX;
+                cursorY = e.pageY;
+            }
+            elementToMove.onmouseup = null;
+
+            var leftItem = getLeftParent(event.target);
+            var name = $(leftItem).children().first().html();
+
+            if (isOverRight($(leftItem))) {
+                attachItemToRightContainer(name);
+                $(leftItem).parent().remove();
+                sortRightContainer();
+            }
+        }
+
+        elementToMove.ondragstart = function() {
+            return false;
+        };
+    });
+
+    // pulling item from right containet to left
+    rightContainer.bind('click', function(event){
+        if($(event.target).hasClass('objectItem')) {
+            var name = $(event.target).html();
+            attachItemToLeftContainer(name, event, true);
+            $(event.target).remove();
+            resizeRightContainer(rightContainer.children().length, itemHeight);
+        }
+        drawLines();
+    });
+    
+    $(".js-modal-close, .modal-overlay").click(function(event) {
+     
+         $(".modal-box, .modal-overlay").fadeOut(500, function() {
+             $(".modal-overlay").remove();
+             isActivePopup = false;
+         });
+         
+         if ($(event.target).attr('id') == "closeBtn") {
+         	var name = $(event.target).closest('.modal-box').find('h3').html();
+         	var fieldsHolder = $("[name='" + name + "']").find('.leftFieldItemHolder');
+         	fieldsHolder.empty();
+         	appendFields(getSelectedFields(name), fieldsHolder.get(0));
+         }
+         
+         drawLines();
+     });
+ 
+     $(window).resize(function() {
+     	var windowHeight = $( window ).height();
+     	if (windowHeight > 250) {
+      	$(".modal-body").css('max-height', windowHeight*0.8 - 135);
+     	}
+         $(".modal-box").css({
+             top: ($(window).height() - $(".modal-box").outerHeight()) / 8,
+             left: ($(window).width() - $(".modal-box").outerWidth()) / 2
+         });
+         $(".modal-overlay").css({
+         	'height' : $( document ).height(),
+         	'width' : $( document ).width()
+        	});
+     });
+
+    // *******************************************************************
+    // **                        methods                                **
+    // *******************************************************************
+
+	function setFields(allFields, objName) {
+    	
+ 		clearTable();		
+ 		var table = $('.modal-body > table > tbody');
+ 		var activeFields = getLeftItemFieldNames(objName);
+ 		
+ 		for (var i = 0; i < allFields.length; i++) {
+         
+         	var tr = document.createElement('tr');
+         	var thName = document.createElement('th');
+         	var thType = document.createElement('th');
+         	var thActive = document.createElement('th');
+         	var checkbox = document.createElement('input');
+         	
+         	var att = document.createAttribute('type');
+          	att.value = 'checkbox';
+          
+          	checkbox.setAttributeNode(att);
+          
+          	thName.style = "";
+         	thType.style = "text-align: center";
+         	thActive.style = "text-align: center";
+
+			$(thName).html(allFields[i].Name);
+			$(thType).html(allFields[i].Type);
+	
+			if (allFields[i].Required) {
+		           $(checkbox).prop('checked', true);
+		           $(checkbox).prop('disabled', true);
+			}
+			
+			if (activeFields.indexOf(allFields[i].Name) != -1) {
+				$(checkbox).prop('checked', true);
+			}
+			
+			$(thActive).append(checkbox);
+			$(tr).append(thName);
+			$(tr).append(thType);
+			$(tr).append(thActive);
+			table.append(tr);
+         }
+ 	}
+ 	
+ 	function clearTable() {
+		$('.modal-body > table > tbody').empty();
+ 	}
+  
+     
+	function getSelectedFields(objName) {
+     
+     	var fieldsHolders = popup.find('input');
+     	var names = [];
+     	var fields = [];
+     	var allFields = getObjectByName(objName, model).Fields;
+     	
+     	for (var i = 0; i < fieldsHolders.length; i++) {
+     		if ($(fieldsHolders[i]).prop('checked')) {
+     			names.push($(fieldsHolders[i]).closest('tr').children().first().html());
+     		}
+     	}
+     	
+     	for (var i = 0; i < allFields.length; i++) {
+     		if (names.indexOf(allFields[i].Name) != -1 ) {
+     			fields.push(allFields[i]);
+     		}
+     	}
+     	
+     	return fields;
+     }
+     
+	function getLeftItemFieldNames(objName) {
+     
+		var names = [];
+		var items = $("[name='" + objName + "']").find('.leftFieldItem');
+		
+		for (var i = 0; i < items.length; i++) {
+			names.push($(items[i]).attr('name'));
+		}
+     	
+		return names;
+     }
+     
+     function getDependencies() {
+		var newDepList = [];
+		var names = [];
+		var dependencies = [];
+		allNameItems = $('.leftItem');
+      	for (var i = 0; i < allNameItems.length; i++) {
+	      	var fieldNames = [];
+	      	var item = $(allNameItems[i]);
+	      	var allFieldsHolders = item.find('.leftFieldItem');
+	      	
+	      	for (var j = 1; j < allFieldsHolders.length; j++) {
+	      		fieldNames.push($(allFieldsHolders[j]).html());
+	      	}
+	      	
+	      	names.push(item.attr('name'));
+	      	dependencies.push({Name: item.attr('name'), Fields: fieldNames});
+      	}
+      
+     	for (var i = 0; i < dependencies.length; i++) {
+     		var objName = dependencies[i].Name;
+     		var fields = dependencies[i].Fields;
+     		for (var j = 0; j < linesList.length; j++) {
+     			if (linesList[j].name1 == objName && fields.indexOf(linesList[j].field1) != -1 && names.indexOf(linesList[j].name2) != -1) {
+     				newDepList.push(linesList[j]);
+     			}
+     		}
+     	}
+     	return {deps: newDepList, names: names};
+     }
+     
+     function q() {
+       
+	    var left = [];
+	    var linesListClone = [];
+	    var queue = [];
+	    var dependencies = [];
+	    var linkedToItselves = [];
+	    
+	    var dependenciesAndNames = getDependencies();
+	    var deps = dependenciesAndNames.deps;
+	    var names = dependenciesAndNames.names;
+	    
+	    if (deps.length < names.length) {
+			var depsNames1 = [];
+			var depsNames2 = [];
+			for (var i = 0; i < deps.length; i++) {
+				depsNames1.push(deps[i].name1);
+				depsNames2.push(deps[i].name2);
+			}
+	      	
+	      	for (var i = 0; i < names.length; i++) {
+	      		if (depsNames1.indexOf(names[i]) == -1 && depsNames2.indexOf(names[i]) == -1) {
+	      			queue.push(names[i]);
+	      		}
+	      	}
+      	}
+
+		for (var i = 0; i < deps.length; i++) {
+			if (deps[i].name1 != deps[i].name2) {
+			    linesListClone.push(deps[i]);
+			    left.push(deps[i].name1);
+			}
+		    else {
+	     		linkedToItselves.push(deps[i].name1);
+		    }
+		}
+
+		while (linesListClone.length != 0) {
+		
+		    var startLength = linesListClone.length;
+		
+		    for (var i = 0; i < linesListClone.length; i++) {
+		
+		        var name1 = linesListClone[i].name1;
+		        var name2 = linesListClone[i].name2;
+		
+		        if (left.indexOf(name2) == -1) {
+		
+		            if (queue.indexOf(name2) == -1) {
+		                queue.push(name2);
+		            }
+		            
+		            linesListClone.splice(i, 1);
+		            left.splice(i, 1);
+		
+		            if (left.indexOf(name1) == -1) {
+		                queue.push(name1);
+		            }
+		
+		            i--;
+		        }
+		    }
+		
+		    if (linesListClone.length == startLength) {
+		        if (linesListClone.length > 0) {
+		            var strInfo = "Can't insert: ";
+		            for (var i = 0; i < linesListClone.length; i++) {
+		                strInfo += linesListClone[i].name1;
+		                if (i < linesListClone.length - 1) {
+		                    strInfo += ", ";
+		                }
+		                else {
+		                    strInfo += ";";
+		                }
+		            }
+		            console.log(strInfo);
+		        }
+		        break;
+		    }
+		}
+      
+		console.log(linkedToItselves);
+		for (var r = 0; r < linkedToItselves.length; r++) {
+			if (queue.indexOf(linkedToItselves[r]) == -1) {
+				queue.push(linkedToItselves[r]);
+			}
+		}
+
+	    for (var i = 0; i < queue.length; i++) {
+	        console.log(i + 1 + ") " + queue[i]);
+	    }
+ 	}
+
+    function resizeRightContainer(count, sizeItem) {
+        if (600 > count*sizeItem + 50) {
+            rightContainer.css('height', count*sizeItem + 50);
+            if (count == 0) {
+                rightContainer.css("visibility", "hidden");
+            }
+            else {
+                rightContainer.css("visibility", "");
+            }
+        }
+        drawLines();
+    }
+    // cheking if left item is over right container
+    function isOverRight(leftItem) {
+        var r_x = rightContainer.offset().left;
+        var r_y = rightContainer.offset().top;
+        var r_z = r_y + parseInt(rightContainer.css('height'));
+
+        var l_x = leftItem.offset().left + parseInt(leftItem.css('width'));
+        var l_y = leftItem.offset().top;
+        var l_z = leftItem.offset().top + parseInt(leftItem.css('height'));
+
+        if (l_x > r_x && ((l_y < r_z && l_y > r_y) || (l_z < r_z && l_z > r_y) || (l_z > r_z && l_y < r_y))) {
+            return true;
+        }
+    }
+
+    function getLeftParent(target) {
+        var parents = $(target).parents();
+        for (var i = 0; i < parents.length; i++) {
+            if ($(parents[i]).hasClass('leftItem')) {
+                return parents[i];
+            }
+        }
+    }
+
+    function SortByName(a, b){
+        var aName = a.toLowerCase();
+        var bName = b.toLowerCase(); 
+        return ((aName < bName) ? -1 : ((aName > bName) ? 1 : 0));
+    }
+
+    function sortRightContainer() {
+        var childNodes = rightContainer.children();
+        var nodesArray = [];
+        for (var i = 0; i < childNodes.length; i++) {
+            nodesArray.push($(childNodes[i]).html());
+        }
+        nodesArray.sort(SortByName);
+        rightContainer.empty();
+        nodesArray.forEach(function(item, i) {
+            attachItemToRightContainer(item);
+        });
+        resizeRightContainer(nodesArray.length, itemHeight);
+    }
+
+    function attachItemToRightContainer(text) {
+        var contaner = createElement("objectItem noselect rightFieldItem", {name: "draggable", value: "true"});
+        $(contaner).html(text);
+        rightContainer.append(contaner);
+        drawLines();
+    }
+    
+    // getting object from model
+    function getObjectByName(name, model) {
+        for (var i = 0; i < model.length; i++) {
+            if(model[i].Name == name) {
+                return model[i];
+            }
+        }
+    }
+    
+    function setFieldsToModel(objName, fields) {
+        for (var i = 0; i < model.length; i++) {
+            if(model[i].Name == objName) {
+                model[i].Fields = fields;
+            }
+        }
+    }
+    
+    function getFieldsFromModel(objName) {
+        for (var i = 0; i < model.length; i++) {
+            if(model[i].Name == objName) {
+                return model[i].Fields;
+            }
+        }
+    }
+    
+    function haveFields(objName) {
+        for (var i = 0; i < model.length; i++) {
+            if(model[i].Name == objName) {
+                if (model[i].Fields != undefined) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    function createElement(className, attribute) {
+        var elem = document.createElement('div');
+        elem.className = className;
+        if (attribute != undefined) {
+            var att = document.createAttribute(attribute.name);
+            att.value = attribute.value;
+            elem.setAttributeNode(att); 
+        }
+        return elem;
+    }
+    
+    function SortByNameObjects(a, b){
+        var aName = a.Name.toLowerCase();
+        var bName = b.Name.toLowerCase(); 
+        return ((aName < bName) ? -1 : ((aName > bName) ? 1 : 0));
+    }
+    
+    function getSpinner() {
+    	var spin = $('.mainCircularG').first().clone();
+    	spin.css('visibility', 'visible');
+    	return spin;
+    }
+
+    function attachItemToLeftContainer(text, event, onDblClick) {
+    	var currentCursor = {X: cursorX, Y: cursorY};
+    	var spinner = getSpinner();
+   	 	var fieldsContainer = getFieldsAndAttach({status: true}, text, onDblClick, false, currentCursor);
+    	
+        if (haveFields(text)) {
+            attachFields(getFieldsFromModel(text), fieldsContainer, false, text);
+        }
+        else {
+  	 			$(fieldsContainer).append(spinner);
+            invokeApex(fieldsContainer, text);
+        }
+    }
+    
+    function invokeApex(fieldsContainer, text) {
+        Visualforce.remoting.Manager.invokeAction(
+            '{!$RemoteAction.NewTestGenController.getFieldAndDependencies}',
+            text,
+            function(result, event){
+            	$(fieldsContainer).empty();
+            	attachFields(result, fieldsContainer, true, text);
+            }, 
+            {escape: false}
+        );
+    }
+    
+    function attachFields(result, leftFieldItemHolder, needParse, text) {
+    	var fieldsList;
+		if(needParse){              
+            result = JSON.parse(result);
+            fieldsList = result.fields;
+            linesList = linesList.concat(result.dependencies);
+            fieldsList.sort(SortByNameObjects);
+            setFieldsToModel(text, fieldsList);
+        }
+        else {
+            fieldsList = result;
+        }
+        
+    	appendFields(fieldsList, leftFieldItemHolder, true);
+        drawLines();
+    }
+    
+    function getFieldsAndAttach(event, text, onDblClick, needParse, cursor) {
+        if (event.status) {
+            var contaner            = createElement("objectItem leftItem noselect", {name: "name", value: text});
+            var mainContaner        = createElement("mainContaner");
+            var nameHolder          = createElement("nameHolder");
+            var fieldHolder         = createElement("field");
+            var leftFieldItemHolder = createElement("leftFieldItemHolder");
+            var bottomArrow         = createElement("bottomArrow arrow up");
+            var bottomPlus          = createElement("bottomArrow plus");
+            var count               = createElement("count");
+                        
+            var countHolder = document.createElement("input");
+                countHolder.className = "countHolder";
+    
+            mainContaner.onmouseover = function(event) {
+                bottomArrow.style.visibility = 'visible';
+                bottomPlus.style.visibility = "visible";
+            }
+            mainContaner.onmouseleave = function(event) {
+                bottomArrow.style.visibility = 'hidden';
+                bottomPlus.style.visibility = "hidden";
+            }
+    
+            $(nameHolder).html(text);
+            $(countHolder).val(10);
+                
+            fieldHolder .appendChild(leftFieldItemHolder);
+            count       .appendChild(countHolder);
+            contaner    .appendChild(nameHolder);
+            contaner    .appendChild(count);
+            contaner    .appendChild(fieldHolder);
+            mainContaner.appendChild(contaner);
+            mainContaner.appendChild(bottomArrow);
+            mainContaner.appendChild(bottomPlus);
+            leftContainer.append(mainContaner);
+    
+            var leftItems = $('.leftItem');
+            var lastLeftItem = leftItems.first();
+    
+            for (var i = 0; i < leftItems.length; i++) {
+                if ($(leftItems[i]).offset().top > $(lastLeftItem).offset().top) {
+                    lastLeftItem = $(leftItems[i]);
+                }
+            }
+    
+            $(mainContaner).css('position', 'absolute');
+    
+            if ($('.leftItem').length > 1) {
+                var offset = lastLeftItem.offset();
+                var height = parseInt(lastLeftItem.css('height'));
+                $(mainContaner).offset({ top: offset.top + height + 30, left: offset.left });
+            }
+            
+            if (!onDblClick) {
+            
+                var leftItem = $(contaner).parent();
+                
+                var itemDragLength = parseInt(leftItem.css('width'));
+                var itemDragHeight = parseInt(leftItem.css('height'));
+            
+                leftItem.offset({
+                    top: cursor.Y - itemDragHeight/2,
+                    left: cursor.X - itemDragLength/2
+                });
+            }
+            return leftFieldItemHolder;
+        }
+        else {
+            attachItemToRightContainer(text);
+        }
+    }
+    
+    function appendFields(fieldsList, holder, required) {
+        
+        fieldsList.unshift({Name: 'id', Type: 'ID'});
+    
+    	for (var i = 0; i < fieldsList.length; i++) {
+                
+            if (required) {
+	        	if (!fieldsList[i].Required && i > 0) continue;
+	        }
+	        
+	        var fieldName = createElement("fieldItem leftFieldItem", {name: "name", value: fieldsList[i].Name});
+	        
+	        if (fieldsList[i].Name.length < 13) {
+	            $(fieldName).html(fieldsList[i].Name);
+	        }
+	        else {
+	            $(fieldName).html(fieldsList[i].Name.substring(0, 10) + '...');
+	            //need to add toolTip
+	            /*$(fieldName).on('mouseover', function(event){
+	                showToolTip(fieldName, fieldsList[i].Name);
+	            });*/
+	        }
+	
+	        var fieldType = createElement("fieldItem rightFieldItem");
+	        $(fieldType).html(fieldsList[i].Type);
+	
+	        holder.appendChild(fieldName);
+	        holder.appendChild(fieldType);
+	    }
+    }
+
+    function drawLines() {
+
+        if (context == undefined) return;
+
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        var deps = getDependencies().deps;
+
+        for(var i = 0; i < deps.length; i++) {
+
+            var container1 = $("[name='" + deps[i].name1 + "']");
+            var container2 = $("[name='" + deps[i].name2 + "']");
+
+            var field1 = container1.find("[name='" + deps[i].field1 + "']");
+            var field2 = container2.find("[name='id']");
+
+            if (field1.length == 0 || field2.length == 0) continue;
+
+            var width1 = parseInt(field1.parent().css('width')) - 10;
+            var width2 = parseInt(field2.parent().css('width'));
+
+            if ($("[name='" + deps[i].name1 + "']").find(".leftFieldItemHolder").css('height') != '0px') {
+                var x1 = field1.parent().offset().left + width1;
+                var y1 = field1.offset().top -40;
+            }
+            else {
+                var x1 = container1.offset().left + width1 + 2;
+                var y1 = container1.offset().top - 23;
+            }
+
+            if ($("[name='" + deps[i].name2 + "']").find(".leftFieldItemHolder").css('height') != '0px') {
+                var x2 = field2.parent().offset().left - 14;
+                var y2 = field2.offset().top - 40;
+            }
+            else {
+                var x2 = container2.offset().left - 14;
+                var y2 = container2.offset().top - 23;
+            }
+
+            width1 += 12;
+
+            drowLine(x1, y1, x2, y2, width1, width2);
+        }
+
+        function drowLine(x1, y1, x2, y2, width1, width2) {
+            context.lineWidth = 3;
+            context.strokeStyle = "#333";
+            context.beginPath();
+            context.moveTo(x1, y1);
+            var isLeftArrow = false;
+            if (x1 <= x2) {
+                context.bezierCurveTo((x1 - x2)/2 + x2, y1, (x1 - x2)/2 + x2, y2, x2, y2);
+            }
+            else {
+                x2 += width2;
+                if (x1 < x2) {
+                    context.bezierCurveTo(-(x1 - x2)/2 + x2, y1, -(x1 - x2)/2 + x2, y2, x2, y2);
+                    isLeftArrow = true;
+                }
+                else {
+                    x1 -= width1 + sircleRadius*2 + 2;
+                    x2 -= width2;
+                    context.moveTo(x1, y1);
+                    if (Math.abs(x1 - x2) < 10) {
+                    	context.bezierCurveTo(x2 - Math.abs(y1 - y2)/3 - 10, y1, x2 - Math.abs(y1 - y2)/3 - 10, y2, x2, y2);
+                    }
+                    else if (x2 + width2 > x1){
+                        context.bezierCurveTo(-(x1 - x2)/2 + x2, y1, -(x1 - x2)/2 + x2, y2, x2, y2);
+                    }
+                    else {
+                        x2 += width2;
+                        context.bezierCurveTo((x1 - x2)/2 + x2, y1, (x1 - x2)/2 + x2, y2, x2, y2);
+                        isLeftArrow = true;
+                    }
+                }
+            }
+            context.stroke();
+
+            if (isLeftArrow) {
+                drawLeftArrow(context, x2, y2);
+            }
+            else {
+                drawRightArrow(context, x2, y2);
+            }
+
+            drawCircle(context, x1, y1);
+        }
+
+        function drawCircle(context, x, y) {
+            context.beginPath();
+            context.arc(x, y, sircleRadius, 0, 2 * Math.PI, false);
+            context.fillStyle = 'green';
+            context.fill();
+            context.lineWidth = 1;
+            context.strokeStyle = '#003300';
+            context.stroke();
+        }
+
+        function drawRightArrow(context, x, y) {
+            context.beginPath();
+            var a = 10;
+            var b = 6;
+
+            context.moveTo(x, y);
+
+            context.lineTo(x - a, y - a);
+            context.lineTo(x - a, y - a + b);
+            context.lineTo(x - b, y);
+
+            context.lineTo(x - a, y + a - b);
+            context.lineTo(x - a, y + a);
+            context.lineTo(x, y);
+
+            context.lineWidth = 1;
+            context.strokeStyle = '#003300';
+            context.fillStyle = 'green';
+            context.fill();
+            context.stroke();
+        }
+
+        function drawLeftArrow(context, x, y) {
+            context.beginPath();
+            var a = 10;
+            var b = 6;
+
+            context.moveTo(x, y);
+
+            context.lineTo(x + a, y - a);
+            context.lineTo(x + a, y - a + b);
+            context.lineTo(x + b, y);
+
+            context.lineTo(x + a, y + a - b);
+            context.lineTo(x + a, y + a);
+            context.lineTo(x, y);
+
+            context.lineWidth = 1;
+            context.strokeStyle = '#003300';
+            context.fillStyle = 'green';
+            context.fill();
+            context.stroke();
+        }
+    }
+    </script>
+</apex:page>

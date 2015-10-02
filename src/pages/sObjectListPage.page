@@ -1,0 +1,44 @@
+<apex:page controller="sObjectListPageController" sidebar="false" showHeader="false" standardStylesheets="false">
+	<style>
+		.center {text-align : center;}
+	</style>
+    <script>
+       	function closeWindow() {
+   			window.close();
+       	}
+       	
+       	window.onunload = function (e) {  
+     		opener.refresh();
+     	}; 
+    </script>
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css"/>
+	<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+	<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+	<link rel="stylesheet" href="{!URLFOR($Resource.SiteSamples, 'bootstrap-3.3.4-dist/css/bootstrap.css')}"/>
+	<apex:form id="form">
+		<apex:outputPanel id="block">
+			 <apex:pageBlock > {!console}
+			 	<div style="display: table; text-align: center;">
+			 		<div style="display: table-cell; vertical-align: top; margin-right: 10px;">
+				        <div style="display: table;">
+			            	<apex:commandButton action="{!AddObjectToData}" value="Add Objects" onComplete="closeWindow()" style="display: table-cell; margin-top : 10px; margin-left: 40px;" rerender="form"/>
+				       	</div>
+				        <apex:pageBlockTable value="{!objectWraperlistPaged}" var="component" styleClass="table table-striped table-bordered table-condensed" style="width : 300px; margin-left: 40px; margin-top: 5px;" >
+				            <apex:column value="{!component.name}" headerValue="sObject" headerClass="center"/>
+				            <apex:column headerValue="Add" headerClass="center">
+				            	<apex:inputCheckbox value="{!component.isCheked}"/>
+				            </apex:column>
+				        </apex:pageBlockTable> 
+				        <apex:outputpanel >
+							<apex:commandButton action="{!first}"  title="Beginning" value="<<" reRender="form" style="margin-right: 3px; margin-left: 30px;"/>
+							<apex:commandButton action="{!previous}"  title="Previous" value="<" reRender="form" style="margin-right: 3px;"/>   
+							{!pager} 
+							<apex:commandButton action="{!next}"  title="Next" value=">" reRender="form" style="margin-right: 3px; margin-left: 5px; "/>
+							<apex:commandButton action="{!last}"  title="End" value=">>" reRender="form" style="margin-right: 3px; "/>  
+						</apex:outputpanel>
+			        </div>
+		        </div>
+            </apex:pageBlock>  
+    	</apex:outputPanel>
+	</apex:form>
+</apex:page>
